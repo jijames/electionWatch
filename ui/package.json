@@ -1,0 +1,12 @@
+{ "name": "ElectionWatch",
+  "repository":
+  { "type": "git",
+    "url": "https://github.com/jijames/electionWatch.git"
+  },
+  "version": "0.0.1",
+  "main": "index.php",
+  "dependencies":
+  { "bootstrap": "latest",
+    "jquery" : "latest"
+  }
+ }

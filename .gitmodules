@@ -1,0 +1,3 @@
+[submodule "tools/monitors/twitter-python"]
+	path = tools/monitors/twitter-python
+	url = https://github.com/computermacgyver/twitter-python.git
