@@ -18,6 +18,8 @@ A collection of crawlers and social media analysis tools to track and investigat
 
 ## Requested Features
 * Ability to capture a screenshot of interesting tweets
+* Geo-referencing (geotagged tweets, mentioned locations, profile locations)
+* Honeypot account for auto-follower scripts + twitter analytics
 
 ## Tools Confirmed Working
 * Twitter - Real-time tweet monitoring based on keyword
