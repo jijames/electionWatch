@@ -79,14 +79,15 @@ class baseCrawler():
             if not t:
                 innerId += 1
                 continue
-            logInfo = (innerId, str(now), bodyPath, bH, t, tH)
+            logInfo = (innerId, str(now), b, bH, t, tH)
             c.execute('INSERT INTO log VALUES (?, ?, ?, ?, ?, ?)', logInfo)
+            print('executed')
             self.log.commit()
             # write body content to HTML file.
             # seems to be encoding issue with joongang (EUC-KR, not UTF-8)
             # (FIX THIS)
-            with open(bodyPath, 'w+') as bodyFile:
-                bodyFile.write(b)
+
+
             # sleep random 0 to 60 seconds
             # sleep(randint(0, 60))
             innerId += 1
@@ -153,8 +154,8 @@ class baseCrawler():
     # If already exists, get most recent articleId
     def getLastEnd(self):
         c = self.log.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS log (id int, now text,
-                  bodyPath text, bodyHash text, title text, titleHash text)''')
+        c.execute('''CREATE TABLE IF NOT EXISTS log (id int, dateObserved text,
+                  body text, bodyHash text, title text, titleHash text)''')
         self.log.commit()
 
         c.execute('SELECT max(id) FROM log')
