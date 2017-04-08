@@ -1,1 +1,4 @@
 /ui/node_modules
+/tools/crawlers/pyNewsCrawl/modules/joongang
+/tools/crawlers/pyNewsCrawl/modules/joongang/*
+/tools/crawlers/pyNewsCrawl/modules/__pycache__/*

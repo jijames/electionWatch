@@ -6,7 +6,7 @@ import subprocess
 class crawlerController():
     def __init__(self):
         # change working dir to script location
-        os.chdir(os.path.dirname(sys.argv[0]))
+        #os.chdir(os.path.dirname(sys.argv[0]))
         self.crawlerList = self.getCrawlerNames()
         self.activeList, self.inactiveList = self.findActive()
         if self.activeList:
