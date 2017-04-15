@@ -7,8 +7,8 @@ import requests
 import hashlib
 import datetime
 import sqlite3
-# from random import randint
-# from time import sleep
+from random import randint
+from time import sleep
 
 
 class baseCrawler():
@@ -63,7 +63,6 @@ class baseCrawler():
         lastEnd = int(self.lastEnd)
         while innerId < lastEnd + 25 + 25 * repetition:
             now = datetime.datetime.now()
-            bodyPath = self.bodyDir + str(innerId) + ".html"
             # if innerId in log, hash and compare
             check = self.checkLog(innerId)
             if check:
@@ -87,9 +86,9 @@ class baseCrawler():
             # seems to be encoding issue with joongang (EUC-KR, not UTF-8)
             # (FIX THIS)
 
-
             # sleep random 0 to 60 seconds
-            # sleep(randint(0, 60))
+            sleep(randint(0, 60))
+
             innerId += 1
             lastEnd = int(self.getLastEnd())
 
@@ -251,3 +250,8 @@ class baseCrawler():
                          + "|" + newTHash + "\n")
                 return(artBody)
             return None
+
+
+class boardCrawler(baseCrawler):
+    def __init__(self, name):
+        baseCrawler.__init__(self, name)
