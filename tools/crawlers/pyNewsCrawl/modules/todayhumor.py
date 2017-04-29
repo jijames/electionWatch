@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+# IMPORTANT: Do not run with tor, site will throw CAPTCHA
 from boardCrawler import boardCrawler
 import requests
 import shutil

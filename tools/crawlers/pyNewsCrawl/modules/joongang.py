@@ -1,14 +1,8 @@
 # -*- coding: UTF-8 -*-
-import baseCrawler
+import newsCrawler
 
-try:
-    joongangCrawler = baseCrawler.baseCrawler('joongang')
-    joongangCrawler.main()
-    joongangCrawler.tempfile.close()
-    exit()
-except:
-    try:
-        tempfile.close()
-        exit()
-    except NameError:
-        exit()
+
+joongangCrawler = newsCrawler.newsCrawler('joongang')
+joongangCrawler.main()
+joongangCrawler.tempfile.close()
+exit()

@@ -1,0 +1,8 @@
+#!/home/lucy/Projects/electionWatch/tools/crawlers/pyNewsCrawl/modules/pyNewsCrawl/bin/python
+# Copyright 2014-2016, Damian Johnson and The Tor Project
+# See LICENSE for licensing information
+
+import stem.interpreter
+
+if __name__ == '__main__':
+  stem.interpreter.main()

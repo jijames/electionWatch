@@ -13,8 +13,6 @@
 #     div container without comments/cannot find comments for some reason.
 #   - Main loop does not terminate on its own. Should it run for a specified
 #     amount of time or run indefinitely?
-#   - Able to get new IP's and random user agents using Tor, but keep getting
-#     CAPTCHA page whenever making requests.
 
 import os
 import sys
@@ -23,6 +21,8 @@ import sqlite3
 import tempfile
 import requests
 import random
+import getopt
+import time
 from time import sleep
 from stem import Signal
 from stem.control import Controller
@@ -33,7 +33,8 @@ class boardCrawler():
     def __init__(self, name, method):
         self.name = name
         # set working directory to script path
-        os.chdir(os.path.dirname(sys.argv[0]))
+        if not os.path.dirname(sys.argv[0]) == '':
+            os.chdir(os.path.dirname(sys.argv[0]))
         # load json file
         jsonVars = []
         jsonPath = "json/" + self.name + ".json"
@@ -76,19 +77,57 @@ class boardCrawler():
         self.tempfile = self.makeTemp()
         self.userAgents = self.loadUserAgent("user_agents.txt")
         self.imageCarver = method
+        self.timeLimit = 15
+        self.startTime = time.time()
+
+        self.usage = """boardCrawler is a generic crawler script for web forums/boards. It pulls new posts off the front page of the site, gets their content, and saves them to a db (and image directory). By default, it runs without tor. Modules using boardCrawler should provide a function for carving images from that site's posts and saving them.
+        -h, --help                : show usage
+        -t, --tor                 : use tor to make requests (default off)
+        -m <int>, --minutes <int> : run script for <int> minutes"""
+
+        # get arguments and options
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "htm:",
+                                       ["help", "tor", "minutes="])
+        except getopt.GetoptError as err:
+            print(err)
+            print(self.usage)
+            sys.exit(2)
+        self.useTor = False
+        for o, a in opts:
+            if o in ("-h", "--help"):
+                print(self.usage)
+                sys.exit()
+            elif o in ("-t", "--tor"):
+                self.useTor = True
+                print("Using tor...")
+            elif o in ("-m", "--minutes"):
+                try:
+                    self.timeLimit = int(a)
+                except:
+                    print("Insert a valid number.")
+                    sys.exit()
+                print("Script will run for " + str(a) + " minutes..")
+            else:
+                assert False, "unhandled option"
+
         # initialize tor session
-        # self.renewConnection()
-        # print("Current Tor Session IP : \n" +
-        #       self.session.get("http://httpbin.org/ip").text)
+        if self.useTor:
+            self.renewConnection()
+            print("Current Tor Session IP : \n" +
+                  self.session.get("http://httpbin.org/ip").text)
 
     def main(self):
-        while True:
+        finish = self.startTime + 60 * self.timeLimit
+        while time.time() < finish:
             i = 0
             urlList = []
             # to use tor:
-            # self.session.get(self.pageURL).text
+            if self.useTor:
+                frontPage = self.session.get(self.pageURL).text
             # results in CAPTCHA page with todayhumor
-            frontPage = requests.get(self.pageURL).text
+            else:
+                frontPage = requests.get(self.pageURL).text
             while i < self.maxPosts:
                 i += 1
                 url, frontPage = self.carveAndCut(frontPage, self.postStart,
@@ -97,10 +136,15 @@ class boardCrawler():
                     urlList.append(url)
             for each in urlList:
                 print("Processing : " + each)
-                postPage = requests.get(self.baseURL + each).text
+                print(str((finish - time.time())/60) + " minutes remaining.")
+                if self.useTor:
+                    postPage = self.session.get(self.baseURL + each).text
+                else:
+                    postPage = requests.get(self.baseURL + each).text
                 self.carvePost(postPage, each)
             sleep(random.randint(0, 60))
-            # self.renewConnection()
+            if self.useTor:
+                self.renewConnection()
 
     def carvePost(self, context, url):
         title = self.carveText(context, self.titleStart, self.titleEnd)

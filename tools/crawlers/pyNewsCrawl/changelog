@@ -1,0 +1,38 @@
+04/29/2017
+-unified json directory
+    news crawlers and board crawlers now both pull json files from 'modules/json/'
+
+-added news crawler anon functions
+    requests are now made through tor
+    IP address and user agent changes after successful download
+    sleeps 0-60 seconds after each successful loop
+
+-unified news output database
+    individual DBs for each news site --> one DB for all news sites
+    added "website" field to db schema
+
+-added date published and author fields to news crawler output db
+
+-fixed bug where working directory wouldn't set properly on linux
+
+-added support for starting sequential news crawler at certain id
+
+-added support for arguments when running news crawler scripts from terminal
+    -h, --help    : show usage
+    -i, --idstart : start crawling at specific inner id
+    -t, --tor     : use tor to make requests (default off)
+    e.g.: python joongang.py -t -i 21527241
+          *runs joongang news crawler using tor, starting at article 21527241
+    *only need to run with -i once, subsequent runs continue from same id
+    **torrc --> controlport 9051, password hash 'password'
+
+-fixed infinite loop in board crawler
+    -stops after 15 minutes by default
+    -number of minutes can be set manually
+
+-added support for arguments when running board crawler scripts from terminal
+    -h, --help                : show usage
+    -t, --tor                 : use tor to make requests (default off)
+    -m <int>, --minutes <int> : run script for <int> minutes
+    e.g.: python todayhumor.py -m 1
+          *runs todayhumor board crawler for 1 minute
