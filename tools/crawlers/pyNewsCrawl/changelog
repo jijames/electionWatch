@@ -1,3 +1,16 @@
+05/08/2017
+-implemented cfscrape for requests
+    can now bypass cloudflare browser check ('wait 5 seconds to be redirected' page)
+    captcha still cannot be bypassed (e.g., still cannot use tor to connect to todayhumor)
+
+-changes to boardCrawler.py
+    changes to carving methods make it easier to carve
+    slightly more informative errors
+    auto retry up to 10 times when connections refused by server
+
+-added ilbe.py
+    crawl ilbe main page
+
 04/29/2017
 -unified json directory
     news crawlers and board crawlers now both pull json files from 'modules/json/'

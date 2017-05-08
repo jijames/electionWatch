@@ -23,6 +23,7 @@ import requests
 import random
 import getopt
 import time
+import cfscrape
 from time import sleep
 from stem import Signal
 from stem.control import Controller
@@ -57,7 +58,6 @@ class boardCrawler():
         crawlVars = jsonVars[0]
         self.baseURL = crawlVars[0]
         self.middleURL = crawlVars[1]
-        self.pageCounter = 1
         self.pageURL = self.setPageURL()
         self.postStart = crawlVars[2]
         self.postEnd = crawlVars[3]
@@ -114,8 +114,6 @@ class boardCrawler():
         # initialize tor session
         if self.useTor:
             self.renewConnection()
-            print("Current Tor Session IP : \n" +
-                  self.session.get("http://httpbin.org/ip").text)
 
     def main(self):
         finish = self.startTime + 60 * self.timeLimit
@@ -124,23 +122,88 @@ class boardCrawler():
             urlList = []
             # to use tor:
             if self.useTor:
-                frontPage = self.session.get(self.pageURL).text
+                frontPage = ''
+                while frontPage == '':
+                    try:
+                        print("Getting front page..")
+                        frontPage = self.session.get(self.pageURL).text
+                    except:
+                        print("Connection refused by server...")
+                        print("Sleeping for 5 seconds...")
+                        time.sleep(5)
+                        self.renewConnection()
+                        continue
             # results in CAPTCHA page with todayhumor
             else:
-                frontPage = requests.get(self.pageURL).text
+                frontPage = ''
+                while frontPage == '':
+                    try:
+                        requestsFlare = cfscrape.create_scraper()
+                        frontPage = requestsFlare.get(self.pageURL).text
+                        with open('frontpage.txt', 'w+') as fp:
+                            fp.write(frontPage)
+                    except:
+                        print("Connection refused by server...")
+                        print("Sleeping for 5 seconds...")
+                        time.sleep(5)
+                        continue
             while i < self.maxPosts:
                 i += 1
                 url, frontPage = self.carveAndCut(frontPage, self.postStart,
                                                   self.postEnd)
                 if url:
+                    print(url)
                     urlList.append(url)
+            if not urlList:
+                print("No URLs found on front page.")
+                print("Probably could not connect to real front page.")
+                print("Shutting down...")
+                sys.exit()
             for each in urlList:
                 print("Processing : " + each)
-                print(str((finish - time.time())/60) + " minutes remaining.")
+                print(str((finish - time.time()) / 60) + " minutes remaining.")
                 if self.useTor:
-                    postPage = self.session.get(self.baseURL + each).text
+                    postPage = ''
+                    attempts = 0
+                    while postPage == '':
+                        try:
+                            attempts += 1
+                            postPage = self.session.get(
+                                self.baseURL + each).text
+                        except:
+                            if attempts <= 10:
+                                print("Connection refused by server...")
+                                print("Number of connection" +
+                                      " attempts: " + str(attempts))
+                                print("Sleeping for 5 seconds...")
+                                time.sleep(5)
+                                self.renewConnection()
+                                continue
+                            else:
+                                print("Connection refused 10 times...")
+                                print("Shutting down...")
+                                sys.exit()
                 else:
-                    postPage = requests.get(self.baseURL + each).text
+                    postPage = ''
+                    attempts = 0
+                    while postPage == '':
+                        try:
+                            attempts += 1
+                            postPage = requestsFlare.get(
+                                self.baseURL + each).text
+                        except:
+                            if attempts <= 10:
+                                print("Connection refused by server...")
+                                print("Number of connection" +
+                                      " attempts: " + str(attempts))
+                                print("Sleeping for 5 seconds...")
+                                time.sleep(5)
+                                continue
+                            else:
+                                print("Connection refused 10 times...")
+                                print("Maybe try using tor?")
+                                print("Shutting down...")
+                                sys.exit()
                 self.carvePost(postPage, each)
             sleep(random.randint(0, 60))
             if self.useTor:
@@ -157,9 +220,11 @@ class boardCrawler():
         innerId = self.carveText(url, self.idStart, self.idEnd)
         info = (innerId, self.name, date, title, author, content,
                 self.baseURL + url)
+        print("INNER ID IS " + str(innerId))
         if not self.checkLog(innerId):
             self.imageCarver(content, innerId)
-            self.c.execute('INSERT INTO log VALUES (?, ?, ?, ?, ?, ?, ?)', info)
+            self.c.execute(
+                'INSERT INTO log VALUES (?, ?, ?, ?, ?, ?, ?)', info)
             self.logDb.commit()
             print("added to log")
         else:
@@ -178,7 +243,7 @@ class boardCrawler():
         with open(uafile, 'rb') as uaf:
             for ua in uaf.readlines():
                 if ua:
-                    userAgents.append(ua.strip()[1:-1-1])
+                    userAgents.append(ua.strip()[1:-1 - 1])
         random.shuffle(userAgents)
         return(userAgents)
 
@@ -189,26 +254,34 @@ class boardCrawler():
             return ''
         else:
             index1 += len(start)
-        index2 = context.find(stop)
+        if stop == "!--end--!":
+            return(context[index1:])
+        else:
+            index2 = context[index1:].find(stop)
         if index2 == -1:
             return ''
         else:
-            return(context[index1:index2])
+            return(context[index1:index1 + index2])
 
     def carveAndCut(self, context, start, stop):
         index1 = context.find(start)
         if index1 == -1:
-            return ''
+            return('', '')
         else:
             index1 += len(start)
-        index2 = context.find(stop)
+        contextSlice = context[index1:index1 + len(start) + 75]
+        index2 = contextSlice.find(stop)
         if index2 == -1:
-            return ''
+            print(contextSlice)
+            return('', context[index1:])
         else:
-            return(context[index1:index2], context[index2+len(stop):])
+            url = contextSlice[:index2]
+            newContext = context[index1 + len(url):]
+            print(url)
+            return(url, newContext)
 
     def renewConnection(self):
-        self.session = requests.session()
+        self.session = cfscrape.create_scraper()
         self.session.proxies = {'http':  'socks5://127.0.0.1:9050',
                                 'https': 'socks5://127.0.0.1:9050'}
         with Controller.from_port(port=9051) as controller:
@@ -216,9 +289,12 @@ class boardCrawler():
             controller.signal(Signal.NEWNYM)
         userAgent = random.choice(self.userAgents)
         self.session.headers = {"User-Agent": userAgent}
+        print("connection renewed...")
+        print("Current Tor Session IP : \n" +
+              self.session.get("http://httpbin.org/ip").text)
 
     def setPageURL(self):
-        return(self.baseURL + self.middleURL + str(self.pageCounter))
+        return(self.baseURL + self.middleURL)
 
     # Function for creating temp file for detection by controller script
     # If exists and open, crawler is running
